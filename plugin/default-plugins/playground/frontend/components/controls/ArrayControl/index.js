@@ -7,16 +7,8 @@ import getControl from '../../../utils/getControl';
 
 import objectControlStyles from '../ObjectControl/styles.css';
 
-const ArrayControl = (props) => {
-  const {
-    label,
-    onUpdate,
-    value,
-    propTypeData,
-    isNested,
-  } = props;
-
-  const size = props.value === null || typeof props.value === 'undefined' ? 0 : props.value.length;
+const ArrayControl = ({ label, onUpdate, value, propTypeData, isNested }) => {
+  const size = value === null || typeof value === 'undefined' ? 0 : value.length;
   const rangeArray = range(size);
 
   const onUpdateEntry = (data, index) => {
@@ -24,6 +16,9 @@ const ArrayControl = (props) => {
     newValue[index] = data;
     onUpdate({ value: newValue });
   };
+
+  const addItem = () => ({ value: [...value || [], ...ArrayControl.randomValue(propTypeData, 1)] });
+  const removeItem = () => ({ value: [...value.slice(0, size - 1)] });
 
   const control = getControl(propTypeData.value);
 
@@ -55,16 +50,21 @@ const ArrayControl = (props) => {
           })}
         </div>
       )}
+
+      <div>
+        <button onClick={() => onUpdate(addItem())}>+</button>
+        {size > 0 && <button onClick={() => onUpdate(removeItem())}>-</button>}
+      </div>
     </div>
   );
 };
 
-ArrayControl.randomValue = (propTypeData) => {
+ArrayControl.randomValue = (propTypeData, maxValues = null) => {
   const canBeNull = !propTypeData.required;
   const canBeUndefined = !propTypeData.required;
   // Restrict random arrays to a length between 0 and 4 elements
   const min = 0;
-  const max = 4;
+  const max = maxValues || 4;
   const size = Math.floor(Math.random() * (max - min + 1)) + min;
   const rangeArray = range(min, size);
   // Get the prop type data of the insides of the array
