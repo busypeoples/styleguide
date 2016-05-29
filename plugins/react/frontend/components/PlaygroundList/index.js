@@ -143,15 +143,56 @@ class PlaygroundList extends Component {
 
   // Attach the correct controls to the component metadata
   generateMetadataWithControls = (docgenMetadata, customMetadata) => {
+    /**
+     *
+     * will be moved into a service of its own.
+     *
+     * convert the customMetaData to propTypeData structure
+     *
+     * from:
+     *
+     * {
+   *    controlType: 'foo',
+   *    constraints: {
+   *      controlType: 'bar'
+   *    }
+   * }
+     *
+     *
+     * to:
+     *
+     * {
+   *    name: 'foo',
+   *    value: {
+   *      name: 'bar'
+   *    }
+   * }
+     *
+     * @param {Object} meta
+     * @returns {{name: *}}
+     */
+    const resolveCustomMetaData = meta => {
+      const structure = { name: meta.controlType };
+      return meta.constraints && meta.constraints.controlType
+        ? Object.assign({}, structure, { value: resolveCustomMetaData(meta.constraints) })
+        : structure;
+    };
+
     let metadataWithControls;
     if (docgenMetadata.props) {
       metadataWithControls = mapValues(docgenMetadata.props, (prop, propKey) => {
-        const newProp = { ...prop };
         // Get the metadata for this property
         const propMeta = customMetadata && customMetadata.props && customMetadata.props[propKey];
+        // has custom meta data?
+        // override the propTypeData value
+        const metaDataStructure = propMeta ? { value: resolveCustomMetaData(propMeta) } : {};
+        const newProp = { ...prop, ...metaDataStructure };
+
         // Attach the control
         newProp.control = getControl(newProp, propMeta);
         newProp.controlType = propMeta && propMeta.controlType;
+        // Attach the original custom meta data
+        newProp.customMetaData = propMeta;
         return newProp;
       });
     }
